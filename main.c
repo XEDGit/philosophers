@@ -81,6 +81,7 @@ int	ft_atoi(const char *str)
 
 void	msleep(unsigned int ms)
 {
+	ms++;
 	while (ms--)
 		usleep(1000);
 }
@@ -105,6 +106,10 @@ bool	parse_argv(char **argv, int *num, t_times *time)
 void	*philosopher_routine(void *arg)
 {
 	t_philo *data = (t_philo *)arg;
+	while (1)
+	{
+		
+	}
 	return (0);
 }
 
@@ -127,8 +132,7 @@ bool	initialize_philosophers(t_philo	**philosophers_pointer, int num, t_times *t
 		philosophers[i].time = time;
 		if (pthread_mutex_init(&philosophers[i].fork, 0) || \
 			pthread_create(&philosophers[i++].thread, 0, \
-			&philosopher_routine, (void *)&philosophers[i]) || \
-			pthread_join(philosophers[i].thread, 0))
+			&philosopher_routine, (void *)&philosophers[i]))
 			return (false);
 	}
 	philosophers[num - 1].next = &philosophers[0].fork;
@@ -136,22 +140,18 @@ bool	initialize_philosophers(t_philo	**philosophers_pointer, int num, t_times *t
 	return (true);
 }
 
-bool	wait_for_starve(t_philo *philosophers, int num, t_times *time)
+bool	wait_for_starve(t_philo *philosophers, int num)
 {
 	int	i;
 
 	i = 0;
-	while (1)
+	while (i != num)
 	{
-		msleep()
-		while (i != num)
-		{
-			if ()
-				return (false);
-			i++;
-		}
+		printf("waiting for %d\n", i);
+		if (pthread_join(philosophers[i].thread, 0))
+			return (false);
+		i++;
 	}
-
 	return (true);
 }
 
