@@ -20,6 +20,7 @@ typedef struct s_philo {
 	pthread_t       thread;
 	pthread_mutex_t fork;
 	pthread_mutex_t	*next;
+	pthread_mutex_t	*print;
 }	t_philo;
 
 #define USAGE_MSG "Usage:\t./philosopher time_to_die time_to_eat time_to_sleep [number_of_times_each_philosopher_must_eat]\n"
@@ -135,7 +136,7 @@ int	check_starve(int update_eat_time, t_philo *data)
 	return (false);
 }
 
-int	print_state(int id, int state)
+int	print_state(int id, int state, pthread_mutex_t *print)
 {
 	long		now;
 	static char	*msg[5] = {
@@ -147,9 +148,12 @@ int	print_state(int id, int state)
 	};
 
 	now = gettime();
-	if (now == ERROR)
+	if (now == ERROR || pthread_mutex_lock(print))
 		return (ERROR);
+	printf("DB: %d, %d\n", id, state);
 	printf(msg[state], now / 1000, id);
+	if (pthread_mutex_unlock(print));
+		return (ERROR);
 	if (state == STARVE)
 		return (STARVE);
 	return (SUCCESS);
@@ -158,15 +162,15 @@ int	print_state(int id, int state)
 int	ph_eat(t_philo *data)
 {
 	int		starve;
-
-	starve = check_starve(true, data);
-	if (starve == true)
-		return (print_state(data->id, STARVE));
-	if (pthread_mutex_lock(&data->fork) || print_state(data->id, 3) || \
-	pthread_mutex_lock(data->next) || print_state(data->id, 3))
+	
+	starve = 0;
+	// starve = check_starve(true, data);
+	// if (starve == true)
+	// 	return (print_state(data->id, STARVE));
+	if (pthread_mutex_lock(&data->fork) || print_state(data->id, 3, data->print) || \
+	pthread_mutex_lock(data->next) || print_state(data->id, 3, data->print))
 		return (ERROR);
-	if (starve == ERROR || \
-	print_state(data->id, data->state))
+	if (starve == ERROR || print_state(data->id, data->state, data->print))
 		return (ERROR);
 	msleep(data->time->eat);
 	if (pthread_mutex_unlock(&data->fork) || \
@@ -181,10 +185,10 @@ int	ph_sleep(t_philo *data)
 {
 	int		starve;
 
-	starve = check_starve(false, data);
-	if (starve == true)
-		return (print_state(data->id, STARVE));
-	if (starve == ERROR || print_state(data->id, data->state))
+	// starve = check_starve(false, data);
+	// if (starve == true)
+	// 	return (print_state(data->id, STARVE));
+	if (starve == ERROR || print_state(data->id, data->state, data->print))
 		return (ERROR);
 	msleep(data->time->sleep);
 	data->state = 2;
@@ -195,10 +199,10 @@ int	ph_think(t_philo *data)
 {
 	int		starve;
 
-	starve = check_starve(false, data);
-	if (starve == true)
-		return (print_state(data->id, STARVE));
-	if (starve == ERROR || print_state(data->id, data->state))
+	// starve = check_starve(false, data);
+	// if (starve == true)
+	// 	return (print_state(data->id, STARVE));
+	if (starve == ERROR || print_state(data->id, data->state, data->print))
 		return (ERROR);
 	data->state = 0;
 	return (false);
@@ -242,7 +246,7 @@ void	init_t_philo(t_philo *philosophers, int i, int num, t_times *time)
 	philosophers[i].time = time;
 }
 
-bool	initialize_philosophers(t_philo	**philosophers_pointer, int num, t_times *time)
+bool	initialize_philosophers(t_philo	**philosophers_pointer, int num, t_times *time, pthread_mutex_t *print)
 {
 	int		i;
 	t_philo	*philosophers;
@@ -250,11 +254,13 @@ bool	initialize_philosophers(t_philo	**philosophers_pointer, int num, t_times *t
 	i = 0;
 	*philosophers_pointer = malloc(sizeof(t_philo) * num);
 	philosophers = *philosophers_pointer;
+	pthread_mutex_init(print, 0);
 	if (gettime() == ERROR)
 		return (false);
 	while (i != num)
 	{
 		init_t_philo(philosophers, i, num, time);
+		philosophers[i].print = print;
 		if (!i && pthread_mutex_init(&philosophers[i].fork, 0))
 			return (false);
 		if (pthread_mutex_init(philosophers[i].next, 0) || \
@@ -296,6 +302,7 @@ int main(int argc, char **argv)
 	t_philo	*philosophers;
 	t_times	time;
 	int		ph_num;
+	pthread_mutex_t	print;
 
 	if (argc != 5 && argc != 6)
 	{
@@ -305,7 +312,7 @@ int main(int argc, char **argv)
 	}
 	if (!parse_argv(&argv[1], &ph_num, &time))
 		return (error("Error parsing arguments", 2));
-	if (!initialize_philosophers(&philosophers, ph_num, &time))
+	if (!initialize_philosophers(&philosophers, ph_num, &time, &print))
 		return (error("Error initializing philosophers", 3));
 	if (!wait_for_starve(philosophers, ph_num))
 		return (error("Error waiting for philosophers", 4));
