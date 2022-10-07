@@ -47,27 +47,6 @@ int	error(char *msg, int ret)
 	return (ret);
 }
 
-int	free_all(t_philo *philosophers, int num)
-{
-	int	i;
-	int	ret;
-
-	i = 0;
-	ret = SUCCESS;
-	if (pthread_mutex_destroy(philosophers[i].print))
-		ret = ERROR;
-	while (i != num)
-	{
-		pthread_detach(philosophers[i].thread);
-		pthread_mutex_unlock(&philosophers[i].fork);
-		if (pthread_mutex_destroy(&philosophers[i].fork))
-			ret = ERROR;
-		i++;
-	}
-	free(philosophers);
-	return (ret);
-}
-
 bool	ph_isdigit(char *str)
 {
 	while (*str)
@@ -114,8 +93,8 @@ long	gettime(void)
 		return (ERROR);
 	if (gettimeofday(&now, 0))
 		return (ERROR);
-	return ((now.tv_sec * 1000000 + now.tv_usec) - \
-	(start.tv_sec * 1000000 + start.tv_usec));
+	return (((now.tv_sec * 1000000 + now.tv_usec) - \
+	(start.tv_sec * 1000000 + start.tv_usec)) / 1000);
 }
 
 void	msleep(unsigned int ms)
@@ -133,25 +112,26 @@ bool	parse_argv(char **argv, int *num, t_times *time)
 	while (argv[i])
 	{
 		if (!ph_isdigit(argv[i++]))
-			return (false);
+			return (true);
 	}
 	*num = ft_atoi(argv[0]);
 	time->die = ft_atoi(argv[1]);
 	time->eat = ft_atoi(argv[2]);
 	time->sleep = ft_atoi(argv[3]);
-	return (true);
+	return (false);
 }
 
-int	check_starve(int update_eat_time, t_philo *data)
+int	check_starve(t_philo *data)
 {
 	long	now;
 
 	now = gettime();
 	if (now == ERROR)
 		return (ERROR);
-	if (data->eat_time && (now / 1000) - data->eat_time > data->time->die)
+	// printf("DB: %d time from eating %ld\n", data->id, now - data->eat_time );
+	if (now - data->eat_time >= data->time->die)
 		return (true);
-	if (update_eat_time)
+	if (data->state == 0)
 		data->eat_time = now;
 	return (false);
 }
@@ -159,72 +139,57 @@ int	check_starve(int update_eat_time, t_philo *data)
 int	print_state(int id, int state, pthread_mutex_t *print)
 {
 	long		now;
-	static char	*msg[5] = {
+	static char	*msg[4] = {
 		"%ldms: philosopher %d is eating\n",
-		"%ldms: philosopher %d is thinking\n",
 		"%ldms: philosopher %d is sleeping\n",
-		"%ldms: philosopher %d has taken a fork\n",
-		"%ldms: philosopher %d died\n"
+		"%ldms: philosopher %d is thinking\n",
+		"%ldms: philosopher %d has taken a fork\n"
 	};
 
 	now = gettime();
+	if (state == 3)
+		return (SUCCESS);
 	if (now == ERROR || pthread_mutex_lock(print))
 		return (ERROR);
-	printf(msg[state], now / 1000, id);
+	printf(msg[state], now, id);
 	if (pthread_mutex_unlock(print))
 		return (ERROR);
-	if (state == STARVE)
-		return (STARVE);
 	return (SUCCESS);
 }
 
 int	ph_eat(t_philo *data)
 {
-	int		starve;
-
-	starve = 0;
-	starve = check_starve(true, data);
-	if (starve == true)
-		return (print_state(data->id, STARVE, data->print));
 	if (\
 	pthread_mutex_lock(&data->fork) || print_state(data->id, 3, data->print) || \
 	pthread_mutex_lock(data->next) || print_state(data->id, 3, data->print))
 		return (ERROR);
-	if (starve == ERROR || print_state(data->id, data->state, data->print))
+	if (print_state(data->id, data->state, data->print))
 		return (ERROR);
 	msleep(data->time->eat);
 	if (pthread_mutex_unlock(&data->fork) || \
 	pthread_mutex_unlock(data->next))
 		return (ERROR);
-	data->state = 1;
+	if (data->state != 3)
+		data->state = 1;
 	return (SUCCESS);
 }
 
-
 int	ph_sleep(t_philo *data)
 {
-	int		starve;
-
-	starve = check_starve(false, data);
-	if (starve == true)
-		return (print_state(data->id, STARVE, data->print));
-	if (starve == ERROR || print_state(data->id, data->state, data->print))
+	if (print_state(data->id, data->state, data->print))
 		return (ERROR);
 	msleep(data->time->sleep);
-	data->state = 2;
+	if (data->state != 3)
+		data->state = 2;
 	return (false);
 }
 
 int	ph_think(t_philo *data)
 {
-	int		starve;
-
-	starve = check_starve(false, data);
-	if (starve == true)
-		return (print_state(data->id, STARVE, data->print));
-	if (starve == ERROR || print_state(data->id, data->state, data->print))
+	if (print_state(data->id, data->state, data->print))
 		return (ERROR);
-	data->state = 0;
+	if (data->state != 3)
+		data->state = 0;
 	return (false);
 }
 
@@ -232,35 +197,35 @@ void	*philosopher_routine(void *arg)
 {
 	t_philo	*data;
 	int		ret;
+	int		starve;
 
 	data = (t_philo *)arg;
-	while (1)
+	while (data->ret == -2 && data->state != 3)
 	{
+		starve = check_starve(data);
+		if (ret == ERROR || starve == ERROR)
+			data->ret = ERROR;
+		if (data->state == 3 || starve == true)
+		{
+			data->ret = data->id;
+			return (0);
+		}
 		if (data->state == 0)
 			ret = ph_eat(data);
 		else if (data->state == 1)
 			ret = ph_sleep(data);
 		else if (data->state == 2)
 			ret = ph_think(data);
-		if (ret == STARVE)
-		{
-			data->ret = STARVE;
-			while (1)
-				;
-		}
 	}
 	return (0);
 }
 
 void	init_t_philo(t_philo *philosophers, int i, int num, t_times *time)
 {
-	philosophers[i].id = i;
-	philosophers[i].ret = -1;
+	philosophers[i].id = i + 1;
+	philosophers[i].ret = -2;
 	philosophers[i].eat_time = 0;
-	if (i % 2)
-		philosophers[i].state = 2;
-	else
-		philosophers[i].state = 0;
+	philosophers[i].state = 0;
 	if (i != num - 1)
 		philosophers[i].next = &philosophers[i + 1].fork;
 	else
@@ -276,47 +241,101 @@ bool	initialize_philosophers(t_philo	**philosophers, int num, \
 	i = 0;
 	*philosophers = malloc(sizeof(t_philo) * num);
 	if (!philosophers || pthread_mutex_init(print, 0))
-	if (gettime() == ERROR)
-		return (false);
+		return (true);
 	while (i != num)
 	{
 		init_t_philo(*philosophers, i, num, time);
 		(*philosophers)[i].print = print;
-		if (!i && pthread_mutex_init(&(*philosophers)[i].fork, 0) || \
-		pthread_mutex_init((*philosophers)[i].next, 0) || \
-		pthread_mutex_lock((*philosophers)[i].print) || \
-		pthread_create(&(*philosophers)[i].thread, 0, \
-		&philosopher_routine, (void *)&(*philosophers)[i]) || \
-		pthread_mutex_unlock((*philosophers)[i].print))
-			return (false);
+		if ((!i && pthread_mutex_init(&(*philosophers)[i].fork, 0)) || \
+		pthread_mutex_init((*philosophers)[i].next, 0))
+			return (true);
 		i++;
 	}
-	return (true);
+	return (false);
+}
+
+bool	start_dinner(t_philo *philosophers, int num)
+{
+	int	i;
+
+	i = 0;
+	if (gettime() == ERROR)
+		return (true);
+	while (i != num)
+	{
+		if (i % 2)
+			msleep(1);
+		if (pthread_create(&philosophers[i].thread, 0, \
+		&philosopher_routine, (void *)&philosophers[i]))
+			return (true);
+		i++;
+	}
+	return (false);
+}
+		
+void *alive(void *)
+{
+	while (1)
+	{
+		dprintf(2, "%d Alive!\n", getpid());
+		msleep(1000);
+	}
+	return (0);
 }
 
 bool	wait_for_starve(t_philo *philosophers, int num)
 {
-	int	i;
-	int	ret;
+	long	i;
+	int		ret;
 
-	ret = -1;
-	while (1)
+	while (true)
 	{
 		i = 0;
 		while (i != num)
 		{
-			if (philosophers[i].ret != -1)
+			if (philosophers[i].ret != -2)
 			{
 				ret = philosophers[i].ret;
-				break ;
+				i = 0;
+				while (i != num)
+					philosophers[i++].state = 3;
+				i = gettime();
+				if (i == ERROR || ret == ERROR)
+					return (true);
+				msleep(5);
+				if (pthread_mutex_lock(philosophers[0].print))
+					return (true);
+				printf("%ldms: philosophers %d died\n", i, ret);
+				return (false);
 			}
 			i++;
 		}
-		if (ret != -1)
-			break ;
 	}
-	printf("finishedddd with %d\n", ret);
-	return (true);
+}
+
+int	free_all(t_philo *philosophers, int num)
+{
+	int	i;
+	int	ret;
+
+	i = 0;
+	ret = SUCCESS;
+	// while (i != num)
+	// 	pthread_mutex_unlock(&philosophers[i++].fork);
+	i = 0;
+	pthread_mutex_unlock(philosophers[0].print);
+	while (i != num)
+	{
+		pthread_join(philosophers[i].thread, 0);
+		if (pthread_mutex_destroy(&philosophers[i].fork))
+			// printf("error destroying %d\n", i);
+			ret = ERROR;
+		i++;
+	}
+	if (pthread_mutex_destroy(philosophers[0].print))
+		ret = ERROR;
+	free(philosophers);
+	return (ret);
 }
 
 int main(int argc, char **argv)
@@ -332,13 +351,17 @@ int main(int argc, char **argv)
 		printf("Wrong number of arguments");
 		return (1);
 	}
-	if (!parse_argv(&argv[1], &ph_num, &time))
+	// pthread_t aliv;
+	// pthread_create(&aliv, 0, &alive, 0);
+	if (parse_argv(&argv[1], &ph_num, &time))
 		return (error("Error parsing arguments", 2));
-	if (!initialize_philosophers(&philosophers, ph_num, &time, &print))
+	if (initialize_philosophers(&philosophers, ph_num, &time, &print))
 		return (error("Error initializing philosophers", 3));
-	if (!wait_for_starve(philosophers, ph_num))
-		return (error("Error waiting for philosophers", 4));
+	if (start_dinner(philosophers, ph_num))
+		return (error("Error starting the philosophers", 4));
+	if (wait_for_starve(philosophers, ph_num))
+		return (error("Error waiting for philosophers", 5));
 	if (free_all(philosophers, ph_num))
-		return (error("Error destroying mutexes", 5));
+		return (error("Error destroying mutexes", 6));
 	return (0);
 }
