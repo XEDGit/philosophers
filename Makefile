@@ -2,17 +2,23 @@ NAME := philosophers
 
 SRC_F := src
 
-SRC := main.c
+SRC := main.c \
+routine.c \
+wait.c \
+philosophers/philo_actions.c \
+philosophers/philo_utils.c \
+utils/argv_utils.c \
+utils/time_utils.c
 
 SRCS := $(addprefix $(SRC_F)/, $(SRC))
 
 OBJ_F := obj
 
-OBJ := $(SRC:.c=.o)
+OBJ := $(notdir $(SRC:.c=.o))
 
 OBJS := $(addprefix $(OBJ_F)/, $(OBJ))
 
-SRC_FLAGS := -Wall -Wextra -Werror -c -g
+SRC_FLAGS := -Wall -Wextra -Werror -c -g -Iincludes
 
 OBJ_FLAGS := -fsanitize=address
 
