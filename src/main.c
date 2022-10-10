@@ -27,6 +27,7 @@ typedef struct s_philo {
 	int				id;
 	int				ret;
 	int				state;
+	int				num_meals;
 	long			eat_time;
 	t_times			*time;
 	pthread_t		thread;
@@ -44,6 +45,7 @@ typedef struct s_data
 	pthread_mutex_t	print;
 	pthread_mutex_t	end;
 	int				num;
+	int				max_meals;
 }	t_data;
 
 
@@ -117,7 +119,6 @@ int	check_starve(t_philo *data, int update)
 	now = gettime();
 	if (now == ERROR)
 		return (ERROR);
-	// printf("DB: %d time from eating %ld, last eat was at %ld and now is %ld\n", data->id, now - data->eat_time, data->eat_time, now);
 	if (now - data->eat_time >= data->time->die)
 		return (true);
 	if (update)
@@ -125,45 +126,33 @@ int	check_starve(t_philo *data, int update)
 	return (false);
 }
 
-void	msleep(unsigned int ms)
-{
-	usleep(ms * 1000);
-}
-
 int	msleep_starve(unsigned int ms, t_philo *data)
 {
-	int	ret;
+	int		ret;
+	long	start;
+	long	now;
 
-	while (ms--)
+	start = gettime();
+	if (start == ERROR)
+		return (ERROR);
+	now = start;
+	while (now - start < ms)
 	{
+		now = gettime();
+		if (now == ERROR)
+		return (ERROR);
 		ret = check_starve(data, false);
 		if (ret)
 			return (ret);
-		usleep(900);
+		usleep(50);
 	}
 	return (false);
 }
 
-bool	parse_argv(char **argv, int *num, t_times *time)
-{
-	int	i;
-
-	i = 0;
-	while (argv[i])
-	{
-		if (!ph_isdigit(argv[i++]))
-			return (true);
-	}
-	*num = ft_atoi(argv[0]);
-	time->die = ft_atoi(argv[1]);
-	time->eat = ft_atoi(argv[2]);
-	time->sleep = ft_atoi(argv[3]);
-	return (false);
-}
-
-int	print_state(int id, int state, pthread_mutex_t *print)
+int	print_state(t_philo *data, bool fork)
 {
 	long		now;
+	int			state;
 	static char	*msg[4] = {
 		"%ldms: philosopher %d is eating\n",
 		"%ldms: philosopher %d is sleeping\n",
@@ -171,11 +160,21 @@ int	print_state(int id, int state, pthread_mutex_t *print)
 		"%ldms: philosopher %d has taken a fork\n"
 	};
 
+	state = data->state;
+	if (fork)
+		state = 3;
 	now = gettime();
-	if (now == ERROR || pthread_mutex_lock(print))
+	if (now == ERROR || pthread_mutex_lock(data->print))
 		return (ERROR);
-	printf(msg[state], now, id);
-	if (pthread_mutex_unlock(print))
+	printf(msg[state], now, data->id);
+	if (!fork && data->state != DIE)
+	{
+		if (data->state < 2)
+			data->state += 1;
+		else
+			data->state = 0;
+	}
+	if (pthread_mutex_unlock(data->print))
 		return (ERROR);
 	return (SUCCESS);
 }
@@ -194,17 +193,32 @@ int	take_fork(int i, t_philo *data)
 	}
 	while (*fork_value)
 	{
-		if (check_starve(data, false))
+		if (check_starve(data, false) == true || data->state == DIE)
 			return (STARVE);
 		usleep(100);
 	}
-	if (pthread_mutex_lock(fork) || \
-	print_state(data->id, 3, data->print))
+	if (pthread_mutex_lock(fork))
 		return (ERROR);
 	*fork_value = 1;
-	if (pthread_mutex_unlock(fork))
+	if (pthread_mutex_unlock(fork) || \
+	print_state(data, true))
 		return (ERROR);
 	return (SUCCESS);
+}
+
+bool	release_forks(t_philo *data)
+{
+	if (pthread_mutex_lock(&data->fork))
+		return (true);
+	data->fork_value = 0;
+	if (pthread_mutex_unlock(&data->fork))
+		return (true);
+	if (pthread_mutex_lock(data->next))
+		return (true);
+	*data->next_value = 0;
+	if (pthread_mutex_unlock(data->next))
+		return (true);
+	return (false);
 }
 
 int	ph_eat(t_philo *data)
@@ -212,51 +226,36 @@ int	ph_eat(t_philo *data)
 	int	ret[2];
 
 	ret[0] = take_fork(0, data);
+	if (ret[0] == STARVE)
+		return (SUCCESS);
 	ret[1] = take_fork(1, data);
+	if (ret[1] == STARVE)
+		return (SUCCESS);
 	if (ret[0] == ERROR || ret[1] == ERROR)
 		return (ERROR);
-	if (ret[0] == STARVE || ret[1] == STARVE)
-		return (SUCCESS);
-	if (print_state(data->id, data->state, data->print))
+	if (data->state != DIE && print_state(data, false))
 		return (ERROR);
-	// printf("%ldms: %d ret: %d %d\n", gettime(), data->id, ret[0], ret[1]);
-	// printf("Buondi da %d\n", data->id);
-	ret[0] = msleep_starve(data->time->eat, data);
-	if (ret[0] == ERROR)
+	if (check_starve(data, true) == ERROR)
 		return (ERROR);
-	if (ret[0] == SUCCESS)
-		return (SUCCESS);
-	if (check_starve(data, true) == ERROR || \
-	pthread_mutex_lock(&data->fork))
+	if (msleep_starve(data->time->eat, data) == ERROR)
 		return (ERROR);
-	data->fork_value = 0;
-	if (pthread_mutex_unlock(&data->fork) || \
-	pthread_mutex_lock(data->next))
-		return (ERROR);
-	*data->next_value = 0;
-	if (pthread_mutex_unlock(data->next))
-		return (ERROR);
-	if (data->state != DIE)
-		data->state = 1;
 	return (SUCCESS);
 }
 
 int	ph_sleep(t_philo *data)
 {
-	if (print_state(data->id, data->state, data->print))
+	if (print_state(data, false))
 		return (ERROR);
-	msleep_starve(data->time->eat, data);
-	if (data->state != DIE)
-		data->state = 2;
+	release_forks(data);
+	data->num_meals++;
+	msleep_starve(data->time->sleep, data);
 	return (false);
 }
 
 int	ph_think(t_philo *data)
 {
-	if (print_state(data->id, data->state, data->print))
+	if (print_state(data, false))
 		return (ERROR);
-	if (data->state != DIE)
-		data->state = 0;
 	return (false);
 }
 
@@ -289,18 +288,40 @@ void	*philosopher_routine(void *arg)
 	return (0);
 }
 
+bool	parse_argv(char **argv, t_data *data)
+{
+	int	i;
+
+	i = 0;
+	while (argv[i])
+	{
+		if (!ph_isdigit(argv[i++]))
+			return (true);
+	}
+	data->num = ft_atoi(argv[0]);
+	data->time.die = ft_atoi(argv[1]);
+	data->time.eat = ft_atoi(argv[2]);
+	data->time.sleep = ft_atoi(argv[3]);
+	if (argv[4])
+		data->max_meals = ft_atoi(argv[4]);
+	else
+		data->max_meals = -1;
+	if (!data->max_meals || !data->num || !data->time.sleep || !data->time.eat || !data->time.die)
+	{
+		printf("Values should not be 0\n");
+		return (true);
+	}
+	return (false);
+}
+
 void	init_t_philo(t_philo *philosophers, int i, t_data *data)
 {
 	philosophers[i].id = i + 1;
 	philosophers[i].ret = -2;
 	philosophers[i].eat_time = 0;
+	philosophers[i].num_meals = 0;
 	philosophers[i].state = 0;
 	philosophers[i].fork_value = 0;
-	// if (data->num == 1)
-	// {
-	// 	philosophers[i].next = 0;
-	// 	philosophers[i].next_value = 0;
-	// }
 	if (i != data->num - 1)
 	{
 		philosophers[i].next_value = &philosophers[i + 1].fork_value;
@@ -360,11 +381,11 @@ bool	finalize(t_philo *philosophers, t_data *data, int i)
 	int		c;
 	long	now;
 
+	if (pthread_mutex_lock(philosophers[i].print))
+		return (true);
 	c = 0;
 	while (c != data->num)
 		philosophers[c++].state = DIE;
-	if (pthread_mutex_lock(philosophers[i].print))
-		return (true);
 	now = gettime();
 	if (now == ERROR || philosophers[i].ret == ERROR)
 		return (true);
@@ -379,13 +400,55 @@ bool	finalize(t_philo *philosophers, t_data *data, int i)
 
 bool	wait_for_starve(t_philo *philosophers, t_data *data)
 {
-	long	i;
+	int	i;
 
 	i = 0;
 	pthread_mutex_lock(&data->end);
 	while (philosophers[i].ret == -2)
 		i++;
 	return (finalize(philosophers, data, i));
+}
+
+bool	finalize_meals(t_philo *philosophers, t_data *data)
+{
+	int		i;
+
+	i = 0;
+	if (pthread_mutex_lock(philosophers[0].print))
+		return (true);
+	while (i != data->num)
+		philosophers[i++].state = DIE;
+	if (pthread_mutex_unlock(philosophers[0].print))
+		return (true);
+	i = 0;
+	while (i != data->num)
+		pthread_join(philosophers[i++].thread, 0);
+	return (false);
+}
+
+bool	wait_for_meals(t_philo *philosophers, t_data *data)
+{
+	int 	i;
+	bool	end;
+
+	while (true)
+	{
+		i = 0;
+		end = true;
+		while (i != data->num)
+		{
+			if (philosophers[i].num_meals < data->max_meals)
+				end = false;
+			if (philosophers[i].ret != -2)
+				break ;
+			i++;
+		}
+		if (end)
+			return (finalize_meals(philosophers, data));
+		if (i != data->num)
+			return (finalize(philosophers, data, i));
+		// usleep(10);
+	}
 }
 
 int	free_all(t_philo *philosophers, int num)
@@ -395,10 +458,6 @@ int	free_all(t_philo *philosophers, int num)
 
 	i = 0;
 	ret = SUCCESS;
-	// while (i != num)
-	// 	pthread_mutex_unlock(&philosophers[i++].fork);
-	i = 0;
-	pthread_mutex_unlock(philosophers[0].print);
 	while (i != num)
 	{
 		pthread_join(philosophers[i].thread, 0);
@@ -414,9 +473,10 @@ int	free_all(t_philo *philosophers, int num)
 
 bool initialize_data(t_data *data)
 {
-	pthread_mutex_init(&data->end, 0);
-	pthread_mutex_lock(&data->end);
-	pthread_mutex_init(&data->print, 0);
+	if (pthread_mutex_init(&data->end, 0) || \
+	(data->max_meals == -1 && pthread_mutex_lock(&data->end)) || \
+	pthread_mutex_init(&data->print, 0))
+		return (true);
 	return (false);
 }
 
@@ -431,17 +491,20 @@ int main(int argc, char **argv)
 		printf("Wrong number of arguments");
 		return (1);
 	}
-	if (parse_argv(&argv[1], &data.num, &data.time))
+	if (parse_argv(&argv[1], &data))
 		return (error("Error parsing arguments", 2));
-	initialize_data(&data);
+	if (initialize_data(&data))
+		return (error("Error initializing data", 3));;
 	if (initialize_philosophers(&philosophers, \
 	data.num, &data))
-		return (error("Error initializing philosophers", 3));
+		return (error("Error initializing philosophers", 4));
 	if (start_dinner(philosophers, data.num))
-		return (error("Error starting the philosophers", 4));
-	if (wait_for_starve(philosophers, &data))
-		return (error("Error during the dinner", 5));
+		return (error("Error starting the philosophers", 5));
+	if (data.max_meals == -1 && wait_for_starve(philosophers, &data))
+		return (error("Error during the dinner", 6));
+	else if (data.max_meals != -1 && wait_for_meals(philosophers, &data))
+		return (error("Error during the dinner", 6));
 	if (free_all(philosophers, data.num))
-		return (error("Error destroying mutexes", 6));
+		return (error("Error destroying mutexes", 7));
 	return (0);
 }

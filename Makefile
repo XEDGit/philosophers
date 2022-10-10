@@ -19,7 +19,7 @@ OBJ_FLAGS := -fsanitize=address
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	gcc $(OBJS) -o $(NAME)
+	gcc $(OBJ_FLAGS) $(OBJS) -o $(NAME)
 
 $(OBJS): $(SRCS)
 	mkdir -p $(OBJ_F)/
