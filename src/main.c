@@ -18,7 +18,7 @@ int	error(char *msg, int ret)
 	return (ret);
 }
 
-int main(int argc, char **argv)
+int	main(int argc, char **argv)
 {
 	t_philo	*philosophers;
 	t_data	data;
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 	if (parse_argv(&argv[1], &data))
 		return (error("Error parsing arguments", 2));
 	if (initialize_data(&data))
-		return (error("Error initializing data", 3));;
+		return (error("Error initializing data", 3));
 	if (initialize_philosophers(&philosophers, \
 	data.num, &data))
 		return (error("Error initializing philosophers", 4));

@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   argv_utils.c                                       :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: lmuzio <lmuzio@student.codam.nl>             +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2022/10/12 05:51:57 by lmuzio        #+#    #+#                 */
+/*   Updated: 2022/10/12 05:51:57 by lmuzio        ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <philosophers.h>
 
 bool	ph_isdigit(char *str)
@@ -54,7 +66,8 @@ bool	parse_argv(char **argv, t_data *data)
 		data->max_meals = ft_atoi(argv[4]);
 	else
 		data->max_meals = -1;
-	if (!data->max_meals || !data->num || !data->time.sleep || !data->time.eat || !data->time.die)
+	if (!data->max_meals || !data->num || !data->time.sleep || \
+	!data->time.eat || !data->time.die)
 	{
 		printf("Values should not be 0\n");
 		return (true);

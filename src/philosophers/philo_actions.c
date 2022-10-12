@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   philo_actions.c                                    :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: lmuzio <lmuzio@student.codam.nl>             +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2022/10/12 05:49:03 by lmuzio        #+#    #+#                 */
+/*   Updated: 2022/10/12 05:49:03 by lmuzio        ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <philosophers.h>
 
 int	ph_eat(t_philo *data)
@@ -51,12 +63,8 @@ void	*philosopher_routine(void *arg)
 		starve = check_starve(data, false);
 		if (ret == ERROR || starve == ERROR)
 			data->ret = ERROR;
-		if (data->state == STARVE || starve == true)
-		{
-			data->ret = data->id;
-			pthread_mutex_unlock(data->end);
-			return (0);
-		}
+		if (starve == true)
+			break ;
 		if (data->state == 0)
 			ret = ph_eat(data);
 		else if (data->state == 1)
@@ -64,5 +72,8 @@ void	*philosopher_routine(void *arg)
 		else if (data->state == 2)
 			ret = ph_think(data);
 	}
+	data->ret = data->id;
+	if () //toadd check for meals or death mode
+	pthread_mutex_unlock(data->end);
 	return (0);
 }

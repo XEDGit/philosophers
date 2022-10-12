@@ -26,6 +26,14 @@ int	check_starve(t_philo *data, int update)
 	return (false);
 }
 
+static void	update_state(int *state)
+{
+	if (*state < 2)
+		*state += 1;
+	else
+		*state = 0;
+}
+
 int	print_state(t_philo *data, bool fork)
 {
 	long		now;
@@ -36,20 +44,17 @@ int	print_state(t_philo *data, bool fork)
 		"%ldms: philosopher %d has taken a fork\n"
 	};
 
-	now = gettime();
-	if (now == ERROR || pthread_mutex_lock(data->print))
+	if (pthread_mutex_lock(data->print))
 		return (ERROR);
-	if (!fork)
+	now = gettime();
+	if (now == ERROR)
+		return (ERROR);
+	if (!fork && data->state != DIE)
 		printf(msg[data->state], now, data->id);
-	else
+	else if (data->state != DIE)
 		printf(msg[3], now, data->id);
 	if (!fork && data->state != DIE)
-	{
-		if (data->state < 2)
-			data->state += 1;
-		else
-			data->state = 0;
-	}
+		update_state(&data->state);
 	if (pthread_mutex_unlock(data->print))
 		return (ERROR);
 	return (SUCCESS);

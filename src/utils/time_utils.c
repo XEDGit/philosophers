@@ -40,7 +40,7 @@ int	msleep_starve(unsigned int ms, t_philo *data)
 	{
 		now = gettime();
 		if (now == ERROR)
-		return (ERROR);
+			return (ERROR);
 		ret = check_starve(data, false);
 		if (ret)
 			return (ret);

@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   wait.c                                             :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: lmuzio <lmuzio@student.codam.nl>             +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2022/10/12 05:55:16 by lmuzio        #+#    #+#                 */
+/*   Updated: 2022/10/12 05:55:16 by lmuzio        ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <philosophers.h>
 
 bool	finalize(t_philo *philosophers, t_data *data, int i)
@@ -52,7 +64,7 @@ bool	finalize_meals(t_philo *philosophers, t_data *data)
 
 bool	wait_for_meals(t_philo *philosophers, t_data *data)
 {
-	int 	i;
+	int		i;
 	bool	end;
 
 	while (true)

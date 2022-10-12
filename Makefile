@@ -3,12 +3,12 @@ NAME := philosophers
 SRC_F := src
 
 SRC := main.c \
-routine.c \
-wait.c \
-philosophers/philo_actions.c \
-philosophers/philo_utils.c \
-utils/argv_utils.c \
-utils/time_utils.c
+	routine.c \
+	wait.c \
+	philosophers/philo_actions.c \
+	philosophers/philo_utils.c \
+	utils/argv_utils.c \
+	utils/time_utils.c
 
 SRCS := $(addprefix $(SRC_F)/, $(SRC))
 
@@ -20,7 +20,7 @@ OBJS := $(addprefix $(OBJ_F)/, $(OBJ))
 
 SRC_FLAGS := -Wall -Wextra -Werror -c -g -Iincludes
 
-OBJ_FLAGS := -fsanitize=address
+OBJ_FLAGS := -fsanitize=thread
 
 all: $(NAME)
 

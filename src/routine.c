@@ -1,6 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   routine.c                                          :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: lmuzio <lmuzio@student.codam.nl>             +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2022/10/12 05:56:19 by lmuzio        #+#    #+#                 */
+/*   Updated: 2022/10/12 05:56:19 by lmuzio        ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <philosophers.h>
 
-bool initialize_data(t_data *data)
+bool	initialize_data(t_data *data)
 {
 	if (pthread_mutex_init(&data->end, 0) || \
 	(data->max_meals == -1 && pthread_mutex_lock(&data->end)) || \

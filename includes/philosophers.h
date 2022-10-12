@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   philosophers.h                                     :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: lmuzio <lmuzio@student.codam.nl>             +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2022/10/12 05:48:26 by lmuzio        #+#    #+#                 */
+/*   Updated: 2022/10/12 05:48:26 by lmuzio        ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef PHILOSOPHERS_H
 # define PHILOSOPHERS_H
 
@@ -39,7 +51,6 @@ typedef struct s_data
 	int				max_meals;
 }	t_data;
 
-
 # define STARVE 4
 # define DIE 5
 # define ERROR -1
@@ -48,7 +59,7 @@ typedef struct s_data
 [number_of_times_each_philosopher_must_eat]\n"
 
 bool	parse_argv(char **argv, t_data *data);
-bool 	initialize_data(t_data *data);
+bool	initialize_data(t_data *data);
 bool	initialize_philosophers(t_philo	**philosophers, int num, \
 t_data *data);
 bool	start_dinner(t_philo *philosophers, int num);
