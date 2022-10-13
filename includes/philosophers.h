@@ -31,6 +31,7 @@ typedef struct s_philo {
 	int				ret;
 	int				state;
 	int				num_meals;
+	bool			meal_mode;
 	long			eat_time;
 	t_times			*time;
 	pthread_t		thread;

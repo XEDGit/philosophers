@@ -20,12 +20,10 @@ OBJS := $(addprefix $(OBJ_F)/, $(OBJ))
 
 SRC_FLAGS := -Wall -Wextra -Werror -c -g -Iincludes
 
-OBJ_FLAGS := -fsanitize=thread
-
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	gcc $(OBJ_FLAGS) $(OBJS) -o $(NAME)
+	gcc $(OBJS) -o $(NAME)
 
 $(OBJS): $(SRCS)
 	mkdir -p $(OBJ_F)/

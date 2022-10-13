@@ -29,6 +29,9 @@ void	init_t_philo(t_philo *philosophers, int i, t_data *data)
 	philosophers[i].num_meals = 0;
 	philosophers[i].state = 0;
 	philosophers[i].fork_value = 0;
+	philosophers[i].meal_mode = true;
+	if (data->max_meals == -1)
+		philosophers[i].meal_mode = false;
 	if (i != data->num - 1)
 	{
 		philosophers[i].next_value = &philosophers[i + 1].fork_value;

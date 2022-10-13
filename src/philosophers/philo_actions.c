@@ -50,6 +50,17 @@ int	ph_think(t_philo *data)
 	return (false);
 }
 
+int	philosopher_dispatch(t_philo *data)
+{
+	static int	(*actions[3])(t_philo *) = {
+		&ph_eat,
+		&ph_sleep,
+		&ph_think
+	};
+
+	return (actions[data->state](data));
+}
+
 void	*philosopher_routine(void *arg)
 {
 	t_philo	*data;
@@ -64,16 +75,13 @@ void	*philosopher_routine(void *arg)
 		if (ret == ERROR || starve == ERROR)
 			data->ret = ERROR;
 		if (starve == true)
+		{
+			data->ret = data->id;
+			if (!data->meal_mode)
+				pthread_mutex_unlock(data->end);
 			break ;
-		if (data->state == 0)
-			ret = ph_eat(data);
-		else if (data->state == 1)
-			ret = ph_sleep(data);
-		else if (data->state == 2)
-			ret = ph_think(data);
+		}
+		ret = philosopher_dispatch(data);
 	}
-	data->ret = data->id;
-	if () //toadd check for meals or death mode
-	pthread_mutex_unlock(data->end);
 	return (0);
 }
