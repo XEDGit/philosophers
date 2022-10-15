@@ -85,7 +85,7 @@ bool	start_dinner(t_philo *philosophers, int num)
 	i = -1;
 	while (++i != num)
 	{
-		if (!i % 2)
+		if (!(i % 2))
 			continue ;
 		if (pthread_create(&philosophers[i].thread, 0, \
 		&philosopher_routine, (void *)&philosophers[i]))
