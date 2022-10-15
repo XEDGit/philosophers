@@ -71,17 +71,27 @@ bool	start_dinner(t_philo *philosophers, int num)
 {
 	int	i;
 
-	i = 0;
+	i = -1;
 	if (gettime() == ERROR)
 		return (true);
-	while (i != num)
+	while (++i != num)
 	{
 		if (i % 2)
-			usleep(50);
+			continue ;
 		if (pthread_create(&philosophers[i].thread, 0, \
 		&philosopher_routine, (void *)&philosophers[i]))
 			return (true);
-		i++;
+	}
+	usleep(500);
+	i = -1;
+	while (++i != num)
+	{
+		// printf("i: %d\n", i);
+		if (!i % 2)
+			continue ;
+		if (pthread_create(&philosophers[i].thread, 0, \
+		&philosopher_routine, (void *)&philosophers[i]))
+			return (true);
 	}
 	return (false);
 }
