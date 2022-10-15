@@ -39,7 +39,8 @@ bool	wait_for_starve(t_philo *philosophers, t_data *data)
 	int	i;
 
 	i = 0;
-	pthread_mutex_lock(&data->end);
+	while (!data->end)
+		usleep(500);
 	while (philosophers[i].ret == -2)
 		i++;
 	return (finalize(philosophers, data, i));

@@ -14,9 +14,8 @@
 
 bool	initialize_data(t_data *data)
 {
-	if (pthread_mutex_init(&data->end, 0) || \
-	(data->max_meals == -1 && pthread_mutex_lock(&data->end)) || \
-	pthread_mutex_init(&data->print, 0))
+	data->end = 0;
+	if (pthread_mutex_init(&data->print, 0))
 		return (true);
 	return (false);
 }

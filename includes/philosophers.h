@@ -40,14 +40,14 @@ typedef struct s_philo {
 	pthread_mutex_t	*next;
 	int				*next_value;
 	pthread_mutex_t	*print;
-	pthread_mutex_t	*end;
+	int				*end;
 }	t_philo;
 
 typedef struct s_data
 {
 	t_times			time;
 	pthread_mutex_t	print;
-	pthread_mutex_t	end;
+	int				end;
 	int				num;
 	int				max_meals;
 }	t_data;

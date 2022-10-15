@@ -74,11 +74,10 @@ void	*philosopher_routine(void *arg)
 		starve = check_starve(data, false);
 		if (ret == ERROR || starve == ERROR)
 			data->ret = ERROR;
-		if (starve == true)
+		if (starve == true && data->state != DIE)
 		{
 			data->ret = data->id;
-			if (!data->meal_mode)
-				pthread_mutex_unlock(data->end);
+			*data->end = 1;
 			break ;
 		}
 		ret = philosopher_dispatch(data);
