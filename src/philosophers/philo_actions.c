@@ -58,7 +58,9 @@ int	philosopher_dispatch(t_philo *data)
 		&ph_think
 	};
 
-	return (actions[data->state](data));
+	if (data->state != DIE)
+		return (actions[data->state](data));
+	return (SUCCESS);
 }
 
 void	*philosopher_routine(void *arg)

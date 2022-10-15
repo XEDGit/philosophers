@@ -18,7 +18,7 @@ OBJ := $(notdir $(SRC:.c=.o))
 
 OBJS := $(addprefix $(OBJ_F)/, $(OBJ))
 
-SRC_FLAGS := -Wall -Wextra -Werror -c -g -Iincludes
+SRC_FLAGS := -Wall -Wextra -Werror -c -Iincludes
 
 all: $(NAME)
 
