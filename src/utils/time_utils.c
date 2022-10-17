@@ -44,7 +44,7 @@ int	msleep_starve(unsigned int ms, t_philo *data)
 		ret = check_starve(data, false);
 		if (ret)
 			return (ret);
-		usleep(50);
+		usleep(800);
 	}
 	return (false);
 }

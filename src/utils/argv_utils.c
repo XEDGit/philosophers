@@ -66,10 +66,11 @@ bool	parse_argv(char **argv, t_data *data)
 		data->max_meals = ft_atoi(argv[4]);
 	else
 		data->max_meals = -1;
-	if (!data->max_meals || !data->num || !data->time.sleep || \
-	!data->time.eat || !data->time.die)
+	if (!data->max_meals || !data->num || data->num > 2048 || \
+	!data->time.sleep || !data->time.eat || !data->time.die)
 	{
-		printf("Values should not be 0\n");
+		printf("Values must not be 0 and philosophers amount \
+must not be more than 2048\n");
 		return (true);
 	}
 	return (false);

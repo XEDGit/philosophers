@@ -76,7 +76,7 @@ int	take_fork(int i, t_philo *data)
 	{
 		if (check_starve(data, false) == true || data->state == DIE)
 			return (STARVE);
-		usleep(50);
+		usleep(500);
 	}
 	if (pthread_mutex_lock(fork))
 		return (ERROR);

@@ -56,7 +56,7 @@ typedef struct s_data
 # define DIE 5
 # define ERROR -1
 # define SUCCESS 0
-# define USAGE_MSG "Usage:\t./philosopher time_to_die time_to_eat time_to_sleep \
+# define USAGE_MSG "Usage:\t./philosophers philosophers_amount time_to_die time_to_eat time_to_sleep \
 [number_of_times_each_philosopher_must_eat]\n"
 
 bool	parse_argv(char **argv, t_data *data);
