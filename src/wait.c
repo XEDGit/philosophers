@@ -28,9 +28,6 @@ bool	finalize(t_philo *philosophers, t_data *data, int i)
 	printf("%ldms: philosopher %d died\n", now, philosophers[i].ret);
 	if (pthread_mutex_unlock(philosophers[i].print))
 		return (true);
-	c = 0;
-	while (c != data->num)
-		pthread_join(philosophers[c++].thread, 0);
 	return (false);
 }
 
@@ -57,9 +54,6 @@ bool	finalize_meals(t_philo *philosophers, t_data *data)
 		philosophers[i++].state = DIE;
 	if (pthread_mutex_unlock(philosophers[0].print))
 		return (true);
-	i = 0;
-	while (i != data->num)
-		pthread_join(philosophers[i++].thread, 0);
 	return (false);
 }
 
