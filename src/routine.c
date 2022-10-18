@@ -27,6 +27,8 @@ void	init_t_philo(t_philo *philosophers, int i, t_data *data)
 	philosophers[i].eat_time = 0;
 	philosophers[i].num_meals = 0;
 	philosophers[i].state = 0;
+	if (i % 2)
+		philosophers[i].state = 1;
 	philosophers[i].fork_value = 0;
 	philosophers[i].meal_mode = true;
 	if (data->max_meals == -1)
@@ -78,16 +80,7 @@ bool	start_dinner(t_philo *philosophers, int num)
 		if (pthread_create(&philosophers[i].thread, 0, \
 		&philosopher_routine, (void *)&philosophers[i]))
 			return (true);
-		i += 2;
-	}
-	usleep(250);
-	i = 1;
-	while (i < num)
-	{
-		if (pthread_create(&philosophers[i].thread, 0, \
-		&philosopher_routine, (void *)&philosophers[i]))
-			return (true);
-		i += 2;
+		i += 1;
 	}
 	return (false);
 }

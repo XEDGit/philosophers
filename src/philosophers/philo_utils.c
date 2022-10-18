@@ -37,6 +37,7 @@ static void	update_state(int *state)
 int	print_state(t_philo *data, bool fork)
 {
 	long		now;
+	int			state;
 	static char	*msg[4] = {
 		"%ldms: philosopher %d is eating\n",
 		"%ldms: philosopher %d is sleeping\n",
@@ -44,15 +45,16 @@ int	print_state(t_philo *data, bool fork)
 		"%ldms: philosopher %d has taken a fork\n"
 	};
 
+	state = data->state;
+	if (fork)
+		state = 3;
 	if (pthread_mutex_lock(data->print))
 		return (ERROR);
 	now = gettime();
 	if (now == ERROR)
 		return (ERROR);
-	if (!fork && data->state != DIE)
-		printf(msg[data->state], now, data->id);
-	else if (data->state != DIE)
-		printf(msg[3], now, data->id);
+	if (data->state != DIE)
+		printf(msg[state], now, data->id);
 	if (!fork && data->state != DIE)
 		update_state(&data->state);
 	if (pthread_mutex_unlock(data->print))

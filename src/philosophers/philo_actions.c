@@ -30,6 +30,7 @@ int	ph_eat(t_philo *data)
 		return (ERROR);
 	if (msleep_starve(data->time->eat, data) == ERROR)
 		return (ERROR);
+	data->num_meals++;
 	return (SUCCESS);
 }
 
@@ -38,7 +39,6 @@ int	ph_sleep(t_philo *data)
 	if (print_state(data, false))
 		return (ERROR);
 	release_forks(data);
-	data->num_meals++;
 	msleep_starve(data->time->sleep, data);
 	return (false);
 }
