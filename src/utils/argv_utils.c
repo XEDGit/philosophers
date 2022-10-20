@@ -48,6 +48,15 @@ int	ft_atoi(const char *str)
 	return (res);
 }
 
+static bool	error_handling(bool mode)
+{
+	if (mode)
+		printf("The number of philosophers must be smaller than 2048\n");
+	else
+		printf("Arguments cannot be 0\n");
+	return (true);
+}
+
 bool	parse_argv(char **argv, t_data *data)
 {
 	int	i;
@@ -66,12 +75,10 @@ bool	parse_argv(char **argv, t_data *data)
 		data->max_meals = ft_atoi(argv[4]);
 	else
 		data->max_meals = -1;
-	if (!data->max_meals || !data->num || data->num > 2048 || \
+	if (!data->max_meals || !data->num || \
 	!data->time.sleep || !data->time.eat || !data->time.die)
-	{
-		printf("Values must not be 0 and philosophers amount \
-must not be more than 2048\n");
-		return (true);
-	}
+		return (error_handling(false));
+	if (data->num >= 2048)
+		return (error_handling(true));
 	return (false);
 }
