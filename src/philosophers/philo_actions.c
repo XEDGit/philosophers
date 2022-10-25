@@ -70,9 +70,14 @@ void	*philosopher_routine(void *arg)
 	int		starve;
 
 	data = (t_philo *)arg;
-	ret = 0;
+	ret = data->time->sleep;
+	if (data->time->eat < ret)
+		ret = data->time->eat;
+	if (data->id % 2)
+		usleep(ret * 900);
 	while (data->state != DIE)
 	{
+		ret = philosopher_dispatch(data);
 		starve = check_starve(data, false);
 		if (ret == ERROR || starve == ERROR)
 			data->ret = ERROR;
@@ -82,7 +87,6 @@ void	*philosopher_routine(void *arg)
 			*data->end = 1;
 			break ;
 		}
-		ret = philosopher_dispatch(data);
 	}
 	return (0);
 }
