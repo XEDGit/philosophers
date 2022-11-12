@@ -7,6 +7,7 @@ SRC := main.c \
 	wait.c \
 	philosophers/philo_actions.c \
 	philosophers/philo_utils.c \
+	philosophers/philo_forks.c \
 	utils/argv_utils.c \
 	utils/time_utils.c
 
