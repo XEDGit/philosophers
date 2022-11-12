@@ -1,4 +1,4 @@
-NAME := philosophers
+NAME := philo
 
 SRC_F := src
 
@@ -19,7 +19,7 @@ OBJ := $(notdir $(SRC:.c=.o))
 
 OBJS := $(addprefix $(OBJ_F)/, $(OBJ))
 
-SRC_FLAGS := -Wall -Wextra -Werror -c -Iincludes
+SRC_FLAGS := -Wall -Wextra -Werror -Wpedantic -c -Iincludes
 
 all: $(NAME)
 
