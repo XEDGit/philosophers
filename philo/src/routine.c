@@ -93,7 +93,9 @@ int	free_all(t_philo *philosophers, int num)
 	while (i != num)
 	{
 		pthread_join(philosophers[i].thread, 0);
-		if (pthread_mutex_destroy(&philosophers[i].fork))
+		if (pthread_mutex_lock(&philosophers[i].fork) || \
+		pthread_mutex_unlock(&philosophers[i].fork) || \
+		pthread_mutex_destroy(&philosophers[i].fork))
 			ret = ERROR;
 		i++;
 	}
