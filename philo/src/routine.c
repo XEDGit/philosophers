@@ -53,7 +53,7 @@ t_data *data)
 
 	i = 0;
 	*philosophers = malloc(sizeof(t_philo) * num);
-	if (!philosophers)
+	if (!*philosophers)
 		return (true);
 	while (i != num)
 	{
