@@ -35,11 +35,13 @@ typedef struct s_philo {
 	long			eat_time;
 	t_times			*time;
 	pthread_t		thread;
+	pthread_mutex_t	state_lock;
 	pthread_mutex_t	fork;
 	int				fork_value;
 	pthread_mutex_t	*next;
 	int				*next_value;
 	pthread_mutex_t	*print;
+	pthread_mutex_t	*end_lock;
 	int				*end;
 }	t_philo;
 
@@ -47,6 +49,7 @@ typedef struct s_data
 {
 	t_times			time;
 	pthread_mutex_t	print;
+	pthread_mutex_t	end_lock;
 	int				end;
 	int				num;
 	int				max_meals;
@@ -74,6 +77,9 @@ int		take_fork(int i, t_philo *data);
 bool	release_forks(t_philo *data);
 int		print_state(t_philo *data, bool fork);
 int		check_starve(t_philo *data, int update);
+int		ph_first_routine(t_philo *data);
+int		philosopher_dispatch(t_philo *data);
 int		msleep_starve(unsigned int ms, t_philo *data);
+int		terminate_philo(t_philo *data);
 
 #endif

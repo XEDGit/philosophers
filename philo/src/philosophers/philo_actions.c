@@ -22,15 +22,16 @@ int	ph_eat(t_philo *data)
 	ret[1] = take_fork(1, data);
 	if (ret[1] == STARVE)
 		return (SUCCESS);
-	if (ret[0] == ERROR || ret[1] == ERROR)
+	if (ret[0] == ERROR || ret[1] == ERROR || \
+	print_state(data, false) || \
+	check_starve(data, true) == ERROR)
 		return (ERROR);
-	if (data->state != DIE && print_state(data, false))
+	ret[0] = msleep_starve(data->time->eat, data);
+	if (ret[0] == ERROR)
 		return (ERROR);
-	if (check_starve(data, true) == ERROR)
-		return (ERROR);
-	if (msleep_starve(data->time->eat, data) == ERROR)
-		return (ERROR);
+	pthread_mutex_lock(data->end_lock);
 	data->num_meals++;
+	pthread_mutex_unlock(data->end_lock);
 	return (SUCCESS);
 }
 
@@ -57,36 +58,39 @@ int	philosopher_dispatch(t_philo *data)
 		&ph_sleep,
 		&ph_think
 	};
+	int			state;
 
-	if (data->state != DIE)
-		return (actions[data->state](data));
+	if (pthread_mutex_lock(&data->state_lock))
+		return (ERROR);
+	state = data->state;
+	if (pthread_mutex_unlock(&data->state_lock))
+		return (ERROR);
+	if (state != DIE)
+		return (actions[state](data));
 	return (SUCCESS);
 }
 
 void	*philosopher_routine(void *arg)
 {
 	t_philo	*data;
-	int		ret;
 	int		starve;
 
 	data = (t_philo *)arg;
-	ret = data->time->sleep;
-	if (data->time->eat < ret)
-		ret = data->time->eat;
-	if (data->id % 2)
-		usleep(ret * 900);
-	while (data->state != DIE)
+	if (!(data->id % 2))
+		msleep_starve(data->time->eat * 0.9, data);
+	while (1)
 	{
-		ret = philosopher_dispatch(data);
-		starve = check_starve(data, false);
-		if (ret == ERROR || starve == ERROR)
-			data->ret = ERROR;
-		if (starve == true && data->state != DIE)
+		starve = ph_first_routine(data);
+		pthread_mutex_lock(&data->state_lock);
+		if (data->state == DIE)
+			break ;
+		if (starve == true)
 		{
-			data->ret = data->id;
-			*data->end = 1;
+			terminate_philo(data);
 			break ;
 		}
+		pthread_mutex_unlock(&data->state_lock);
 	}
+	pthread_mutex_unlock(&data->state_lock);
 	return (0);
 }

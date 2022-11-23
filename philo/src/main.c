@@ -12,11 +12,28 @@
 
 #include <philosophers.h>
 
-int	error(char *msg, int ret, t_philo *tofree)
+int	error(char *msg, int ret, t_philo *tofree, t_data *data)
 {
+	int	i;
+
 	printf("Error: %s\n", msg);
 	if (tofree)
-		free(tofree);
+	{
+		if (data)
+		{
+			i = 0;
+			while (i != data->num)
+			{
+				pthread_mutex_lock(&tofree[i].state_lock);
+				tofree[i].state = DIE;
+				pthread_mutex_unlock(&tofree[i++].state_lock);
+			}
+			if (free_all(tofree, data->num))
+				error("Error destroying mutexes", 0, 0, 0);
+		}
+		else
+			free(tofree);
+	}
 	return (ret);
 }
 
@@ -28,22 +45,23 @@ int	main(int argc, char **argv)
 	if (argc != 5 && argc != 6)
 	{
 		printf(USAGE_MSG);
-		return (error("Wrong number of arguments", 1, 0));
+		return (error("Wrong number of arguments", 1, 0, 0));
 	}
 	if (parse_argv(&argv[1], &data))
-		return (error("Error parsing arguments", 2, 0));
+		return (error("Error parsing arguments", 2, 0, 0));
 	if (initialize_data(&data))
-		return (error("Error initializing data", 3, 0));
+		return (error("Error initializing data", 3, 0, 0));
 	if (initialize_philosophers(&philosophers, \
 	data.num, &data))
-		return (error("Error initializing philosophers", 4, philosophers));
+		return (error("Error initializing philosophers", 4, philosophers, 0));
 	if (start_dinner(philosophers, data.num))
-		return (error("Error starting the philosophers", 5, philosophers));
+		return (error("Error starting the philosophers", 5, \
+		philosophers, &data));
 	if (data.max_meals == -1 && wait_for_starve(philosophers, &data))
-		return (error("Error during the dinner", 6, philosophers));
+		return (error("Error during the dinner", 6, philosophers, &data));
 	else if (data.max_meals != -1 && wait_for_meals(philosophers, &data))
-		return (error("Error during the dinner", 6, philosophers));
+		return (error("Error during the dinner", 6, philosophers, &data));
 	if (free_all(philosophers, data.num))
-		return (error("Error destroying mutexes", 7, philosophers));
+		return (error("Error destroying mutexes", 7, philosophers, &data));
 	return (0);
 }

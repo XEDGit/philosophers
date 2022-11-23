@@ -6,7 +6,7 @@
 /*   By: lmuzio <lmuzio@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/11/12 17:56:44 by lmuzio            #+#    #+#             */
-/*   Updated: 2022/11/12 18:07:11 by lmuzio           ###   ########.fr       */
+/*   Updated: 2022/11/23 19:04:28 by lmuzio           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,13 @@ int i, t_philo *data)
 	}
 }
 
+int	take_fork_starve(t_philo *data)
+{
+	if (pthread_mutex_unlock(&data->state_lock))
+		return (ERROR);
+	return (STARVE);
+}
+
 int	take_fork(int i, t_philo *data)
 {
 	pthread_mutex_t	*fork;
@@ -41,8 +48,12 @@ int	take_fork(int i, t_philo *data)
 			break ;
 		if (pthread_mutex_unlock(fork))
 			return (ERROR);
+		if (pthread_mutex_lock(&data->state_lock))
+			return (ERROR);
 		if (check_starve(data, false) == true || data->state == DIE)
-			return (STARVE);
+			return (take_fork_starve(data));
+		if (pthread_mutex_unlock(&data->state_lock))
+			return (ERROR);
 		usleep(800);
 	}
 	*fork_value = 1;

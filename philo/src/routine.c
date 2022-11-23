@@ -15,7 +15,8 @@
 bool	initialize_data(t_data *data)
 {
 	data->end = 0;
-	if (pthread_mutex_init(&data->print, 0))
+	if (pthread_mutex_init(&data->print, 0) || \
+	pthread_mutex_init(&data->end_lock, 0))
 		return (true);
 	return (false);
 }
@@ -44,6 +45,7 @@ void	init_t_philo(t_philo *philosophers, int i, t_data *data)
 	philosophers[i].time = &data->time;
 	philosophers[i].print = &data->print;
 	philosophers[i].end = &data->end;
+	philosophers[i].end_lock = &data->end_lock;
 }
 
 bool	initialize_philosophers(t_philo	**philosophers, int num, \
@@ -58,7 +60,8 @@ t_data *data)
 	while (i != num)
 	{
 		init_t_philo(*philosophers, i, data);
-		if ((!i && pthread_mutex_init(&(*philosophers)[i].fork, 0)) || \
+		if (pthread_mutex_init(&(*philosophers)[i].state_lock, 0) || \
+		(!i && pthread_mutex_init(&(*philosophers)[i].fork, 0)) || \
 		(num != 1 && pthread_mutex_init((*philosophers)[i].next, 0)))
 			return (true);
 		i++;
@@ -95,7 +98,10 @@ int	free_all(t_philo *philosophers, int num)
 		pthread_join(philosophers[i].thread, 0);
 		if (pthread_mutex_lock(&philosophers[i].fork) || \
 		pthread_mutex_unlock(&philosophers[i].fork) || \
-		pthread_mutex_destroy(&philosophers[i].fork))
+		pthread_mutex_destroy(&philosophers[i].fork) || \
+		pthread_mutex_lock(&philosophers[i].state_lock) || \
+		pthread_mutex_unlock(&philosophers[i].state_lock) || \
+		pthread_mutex_destroy(&philosophers[i].state_lock))
 			ret = ERROR;
 		i++;
 	}
