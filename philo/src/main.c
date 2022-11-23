@@ -12,6 +12,14 @@
 
 #include <philosophers.h>
 
+int	destroy_data(t_data *data)
+{
+	if (pthread_mutex_destroy(&data->end_lock) || \
+	pthread_mutex_destroy(&data->print))
+		return (true);
+	return (false);
+}
+
 int	error(char *msg, int ret, t_philo *tofree, t_data *data)
 {
 	int	i;
@@ -24,7 +32,8 @@ int	error(char *msg, int ret, t_philo *tofree, t_data *data)
 			i = 0;
 			while (i != data->num)
 			{
-				pthread_mutex_lock(&tofree[i].state_lock);
+				if (pthread_mutex_lock(&tofree[i].state_lock))
+					continue ;
 				tofree[i].state = DIE;
 				pthread_mutex_unlock(&tofree[i++].state_lock);
 			}
@@ -34,6 +43,8 @@ int	error(char *msg, int ret, t_philo *tofree, t_data *data)
 		else
 			free(tofree);
 	}
+	if (data && !tofree && destroy_data(data))
+		error("Error destroying mutexes", 0, 0, 0);
 	return (ret);
 }
 
@@ -50,10 +61,10 @@ int	main(int argc, char **argv)
 	if (parse_argv(&argv[1], &data))
 		return (error("Error parsing arguments", 2, 0, 0));
 	if (initialize_data(&data))
-		return (error("Error initializing data", 3, 0, 0));
-	if (initialize_philosophers(&philosophers, \
-	data.num, &data))
-		return (error("Error initializing philosophers", 4, philosophers, 0));
+		return (error("Error initializing data", 3, 0, &data));
+	if (init_philosophers(&philosophers, data.num, &data))
+		return (error("Error initializing philosophers", 4, \
+		philosophers, &data));
 	if (start_dinner(philosophers, data.num))
 		return (error("Error starting the philosophers", 5, \
 		philosophers, &data));

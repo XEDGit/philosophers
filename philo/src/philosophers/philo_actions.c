@@ -29,9 +29,11 @@ int	ph_eat(t_philo *data)
 	ret[0] = msleep_starve(data->time->eat, data);
 	if (ret[0] == ERROR)
 		return (ERROR);
-	pthread_mutex_lock(data->end_lock);
+	if (pthread_mutex_lock(data->end_lock))
+		return (ERROR);
 	data->num_meals++;
-	pthread_mutex_unlock(data->end_lock);
+	if (pthread_mutex_unlock(data->end_lock))
+		return (ERROR);
 	return (SUCCESS);
 }
 
@@ -81,16 +83,18 @@ void	*philosopher_routine(void *arg)
 	while (1)
 	{
 		starve = ph_first_routine(data);
-		pthread_mutex_lock(&data->state_lock);
-		if (data->state == DIE)
+		if (pthread_mutex_lock(&data->state_lock) || \
+		data->state == DIE)
 			break ;
-		if (starve == true)
+		if (starve)
 		{
-			terminate_philo(data);
+			terminate_philo(data, starve);
 			break ;
 		}
-		pthread_mutex_unlock(&data->state_lock);
+		if (pthread_mutex_unlock(&data->state_lock))
+			break ;
 	}
-	pthread_mutex_unlock(&data->state_lock);
+	if (pthread_mutex_unlock(&data->state_lock))
+		data->ret = ERROR;
 	return (0);
 }

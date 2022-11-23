@@ -48,7 +48,7 @@ void	init_t_philo(t_philo *philosophers, int i, t_data *data)
 	philosophers[i].end_lock = &data->end_lock;
 }
 
-bool	initialize_philosophers(t_philo	**philosophers, int num, \
+bool	init_philosophers(t_philo	**philosophers, int num, \
 t_data *data)
 {
 	int		i;
@@ -105,7 +105,8 @@ int	free_all(t_philo *philosophers, int num)
 			ret = ERROR;
 		i++;
 	}
-	if (pthread_mutex_destroy(philosophers[0].print))
+	if (pthread_mutex_destroy(philosophers[0].print) || \
+	pthread_mutex_destroy(philosophers[0].end_lock))
 		ret = ERROR;
 	free(philosophers);
 	return (ret);

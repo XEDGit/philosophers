@@ -22,11 +22,14 @@ bool	finalize(t_philo *philosophers, t_data *data, int i)
 		return (true);
 	while (c != data->num)
 	{
-		pthread_mutex_lock(&philosophers[c].state_lock);
+		if (pthread_mutex_lock(&philosophers[c].state_lock))
+			return (true);
 		philosophers[c].state = DIE;
-		pthread_mutex_unlock(&philosophers[c++].state_lock);
+		if (pthread_mutex_unlock(&philosophers[c++].state_lock))
+			return (true);
 	}
-	pthread_mutex_lock(&data->end_lock);
+	if (pthread_mutex_lock(&data->end_lock))
+		return (true);
 	now = gettime();
 	if (now == ERROR || philosophers[i].ret == ERROR)
 		return (true);
@@ -68,9 +71,11 @@ bool	finalize_meals(t_philo *philosophers, t_data *data)
 		return (true);
 	while (i != data->num)
 	{
-		pthread_mutex_lock(&philosophers[i].state_lock);
+		if (pthread_mutex_lock(&philosophers[i].state_lock))
+			return (true);
 		philosophers[i].state = DIE;
-		pthread_mutex_unlock(&philosophers[i++].state_lock);
+		if (pthread_mutex_unlock(&philosophers[i++].state_lock))
+			return (true);
 	}
 	if (pthread_mutex_unlock(philosophers[0].print))
 		return (true);
@@ -86,7 +91,8 @@ bool	wait_for_meals(t_philo *philosophers, t_data *data)
 	{
 		i = 0;
 		end = true;
-		pthread_mutex_lock(&data->end_lock);
+		if (pthread_mutex_lock(&data->end_lock))
+			return (true);
 		while (i != data->num)
 		{
 			if (philosophers[i].num_meals < data->max_meals)
@@ -95,7 +101,8 @@ bool	wait_for_meals(t_philo *philosophers, t_data *data)
 				break ;
 			i++;
 		}
-		pthread_mutex_unlock(&data->end_lock);
+		if (pthread_mutex_unlock(&data->end_lock))
+			return (true);
 		if (i != data->num)
 			return (finalize(philosophers, data, i));
 		if (end)

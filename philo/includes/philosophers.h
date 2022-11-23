@@ -64,7 +64,7 @@ typedef struct s_data
 
 bool	parse_argv(char **argv, t_data *data);
 bool	initialize_data(t_data *data);
-bool	initialize_philosophers(t_philo	**philosophers, int num, \
+bool	init_philosophers(t_philo	**philosophers, int num, \
 t_data *data);
 bool	start_dinner(t_philo *philosophers, int num);
 bool	wait_for_starve(t_philo *philosophers, t_data *data);
@@ -80,6 +80,6 @@ int		check_starve(t_philo *data, int update);
 int		ph_first_routine(t_philo *data);
 int		philosopher_dispatch(t_philo *data);
 int		msleep_starve(unsigned int ms, t_philo *data);
-int		terminate_philo(t_philo *data);
+int		terminate_philo(t_philo *data, int starve);
 
 #endif

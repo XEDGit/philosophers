@@ -19,12 +19,12 @@ OBJ := $(notdir $(SRC:.c=.o))
 
 OBJS := $(addprefix $(OBJ_F)/, $(OBJ))
 
-SRC_FLAGS := -Wall -Wextra -Werror -Wpedantic -c -Iincludes -g3 -fsanitize=thread
+SRC_FLAGS := -Wall -Wextra -Werror -Wpedantic -c -Iincludes
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	gcc $(OBJS) -o $(NAME) -g3 -fsanitize=thread
+	gcc $(OBJS) -o $(NAME)
 
 $(OBJS): $(SRCS)
 	mkdir -p $(OBJ_F)/
